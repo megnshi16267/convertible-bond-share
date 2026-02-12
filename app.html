@@ -156,6 +156,41 @@
             font-size: 12px;
             color: #6b7280;
         }
+
+        .checklist-box {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px;
+            min-height: 140px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .check-item:hover {
+            background: #f3f4f6;
+        }
+
+        .check-item input[type="checkbox"] {
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .check-item span {
+            font-size: 13px;
+            color: #374151;
+            user-select: none;
+        }
         
         .filter-item select:hover { border-color: #667eea; }
         .filter-item select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
@@ -313,7 +348,7 @@
             <h1>📊 可转债投资分析系统 v3.1</h1>
             <p>智能筛选·策略选券·强赎预警·实时数据</p>
             <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                更新时间: 2026年02月12日 12:05:46
+                更新时间: 2026年02月12日 12:08:52
             </p>
         </header>
         
@@ -501,8 +536,7 @@
                             <button type="button" class="mini-btn" onclick="selectAllOptions('filter-industry')">全选</button>
                             <button type="button" class="mini-btn" onclick="clearOptions('filter-industry')">清空</button>
                         </div>
-                        <select id="filter-industry" multiple size="6">
-                        </select>
+                        <div id="filter-industry" class="checklist-box"></div>
                         <div id="hint-industry" class="multi-select-hint">已选 0 项</div>
                     </div>
                     
@@ -513,8 +547,7 @@
                             <button type="button" class="mini-btn" onclick="selectAllOptions('filter-rating')">全选</button>
                             <button type="button" class="mini-btn" onclick="clearOptions('filter-rating')">清空</button>
                         </div>
-                        <select id="filter-rating" multiple size="6">
-                        </select>
+                        <div id="filter-rating" class="checklist-box"></div>
                         <div id="hint-rating" class="multi-select-hint">已选 0 项</div>
                     </div>
                     
@@ -525,8 +558,7 @@
                             <button type="button" class="mini-btn" onclick="selectAllOptions('filter-company')">全选</button>
                             <button type="button" class="mini-btn" onclick="clearOptions('filter-company')">清空</button>
                         </div>
-                        <select id="filter-company" multiple size="6">
-                        </select>
+                        <div id="filter-company" class="checklist-box"></div>
                         <div id="hint-company" class="multi-select-hint">已选 0 项</div>
                     </div>
                 </div>
@@ -878,97 +910,84 @@
         
         // 初始化筛选器选项
         function initFilters() {
-            // 行业筛选
-            const industrySelect = document.getElementById('filter-industry');
-            allIndustries.forEach(industry => {
-                const option = document.createElement('option');
-                option.value = industry;
-                option.textContent = industry;
-                industrySelect.appendChild(option);
-            });
-            
-            // 评级筛选
-            const ratingSelect = document.getElementById('filter-rating');
-            allRatings.forEach(rating => {
-                const option = document.createElement('option');
-                option.value = rating;
-                option.textContent = rating;
-                ratingSelect.appendChild(option);
-            });
-            
-            // 企业性质筛选
-            const companySelect = document.getElementById('filter-company');
-            allCompanyTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                option.textContent = type;
-                companySelect.appendChild(option);
-            });
-
-            // 优化多选体验：点击即选中/取消 + 搜索 + 已选计数
-            setupMultiSelectUX('filter-industry', 'search-industry', 'hint-industry');
-            setupMultiSelectUX('filter-rating', 'search-rating', 'hint-rating');
-            setupMultiSelectUX('filter-company', 'search-company', 'hint-company');
+            renderMultiChecklist('filter-industry', allIndustries, 'search-industry', 'hint-industry');
+            renderMultiChecklist('filter-rating', allRatings, 'search-rating', 'hint-rating');
+            renderMultiChecklist('filter-company', allCompanyTypes, 'search-company', 'hint-company');
         }
 
-        function setupMultiSelectUX(selectId, searchId, hintId) {
-            const selectEl = document.getElementById(selectId);
+        function renderMultiChecklist(containerId, values, searchId, hintId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            values.forEach(v => {
+                const item = document.createElement('label');
+                item.className = 'check-item';
+                item.setAttribute('data-value', v.toLowerCase());
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = v;
+                checkbox.addEventListener('change', function() {
+                    updateMultiSelectHint(containerId, hintId);
+                });
+
+                const text = document.createElement('span');
+                text.textContent = v;
+
+                item.appendChild(checkbox);
+                item.appendChild(text);
+                container.appendChild(item);
+            });
+
             const searchEl = document.getElementById(searchId);
-
-            // 点击选项即切换选中状态，不再依赖 Ctrl/Command
-            selectEl.addEventListener('mousedown', function(e) {
-                if (e.target.tagName === 'OPTION') {
-                    e.preventDefault();
-                    e.target.selected = !e.target.selected;
-                    updateMultiSelectHint(selectId, hintId);
-                }
-            });
-
-            selectEl.addEventListener('change', function() {
-                updateMultiSelectHint(selectId, hintId);
-            });
-
             searchEl.addEventListener('input', function() {
-                filterMultiSelectOptions(selectId, searchEl.value);
+                filterMultiSelectOptions(containerId, searchEl.value);
             });
 
-            updateMultiSelectHint(selectId, hintId);
+            updateMultiSelectHint(containerId, hintId);
         }
 
-        function filterMultiSelectOptions(selectId, keyword) {
-            const selectEl = document.getElementById(selectId);
+        function filterMultiSelectOptions(containerId, keyword) {
+            const container = document.getElementById(containerId);
             const kw = (keyword || '').trim().toLowerCase();
-            Array.from(selectEl.options).forEach(opt => {
-                const visible = !kw || opt.text.toLowerCase().includes(kw);
-                opt.style.display = visible ? '' : 'none';
+            Array.from(container.querySelectorAll('.check-item')).forEach(item => {
+                const val = item.getAttribute('data-value') || '';
+                const visible = !kw || val.includes(kw);
+                item.style.display = visible ? 'flex' : 'none';
             });
         }
 
-        function updateMultiSelectHint(selectId, hintId) {
-            const selectEl = document.getElementById(selectId);
+        function updateMultiSelectHint(containerId, hintId) {
+            const container = document.getElementById(containerId);
             const hintEl = document.getElementById(hintId);
-            const selected = Array.from(selectEl.selectedOptions).length;
+            const selected = container.querySelectorAll('input[type="checkbox"]:checked').length;
             hintEl.textContent = `已选 ${selected} 项`;
         }
 
-        function selectAllOptions(selectId) {
-            const selectEl = document.getElementById(selectId);
-            Array.from(selectEl.options).forEach(opt => {
-                if (opt.style.display !== 'none') {
-                    opt.selected = true;
+        function selectAllOptions(containerId) {
+            const container = document.getElementById(containerId);
+            Array.from(container.querySelectorAll('.check-item')).forEach(item => {
+                if (item.style.display !== 'none') {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = true;
                 }
             });
-            const hintId = `hint-${selectId.split('-')[1]}`;
-            updateMultiSelectHint(selectId, hintId);
+            const hintId = `hint-${containerId.split('-')[1]}`;
+            updateMultiSelectHint(containerId, hintId);
         }
 
-        function clearOptions(selectId) {
-            const selectEl = document.getElementById(selectId);
-            Array.from(selectEl.options).forEach(opt => {
-                opt.selected = false;
+        function clearOptions(containerId) {
+            const container = document.getElementById(containerId);
+            Array.from(container.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+                cb.checked = false;
             });
-            const hintId = `hint-${selectId.split('-')[1]}`;
-            updateMultiSelectHint(selectId, hintId);
+            const hintId = `hint-${containerId.split('-')[1]}`;
+            updateMultiSelectHint(containerId, hintId);
+        }
+
+        function getCheckedValues(containerId) {
+            const container = document.getElementById(containerId);
+            return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
         }
         
         // 快速筛选
@@ -1061,15 +1080,13 @@
             }
             
             // 行业（多选）
-            const industrySelect = document.getElementById('filter-industry');
-            const selectedIndustries = Array.from(industrySelect.selectedOptions).map(opt => opt.value);
+            const selectedIndustries = getCheckedValues('filter-industry');
             if (selectedIndustries.length > 0) {
                 filtered = filtered.filter(b => selectedIndustries.includes(b['行业分类']));
             }
             
             // 评级（多选）
-            const ratingSelect = document.getElementById('filter-rating');
-            const selectedRatings = Array.from(ratingSelect.selectedOptions).map(opt => opt.value);
+            const selectedRatings = getCheckedValues('filter-rating');
             if (selectedRatings.length > 0) {
                 filtered = filtered.filter(b => {
                     const rating = b['主体评级'] || b['债券评级'] || '';
@@ -1078,8 +1095,7 @@
             }
             
             // 企业性质（多选）
-            const companySelect = document.getElementById('filter-company');
-            const selectedCompanies = Array.from(companySelect.selectedOptions).map(opt => opt.value);
+            const selectedCompanies = getCheckedValues('filter-company');
             if (selectedCompanies.length > 0) {
                 filtered = filtered.filter(b => selectedCompanies.includes(b['企业性质']));
             }
@@ -1097,9 +1113,9 @@
             document.getElementById('filter-redeem').value = 'all';
             document.getElementById('filter-change').value = 'all';
             document.getElementById('filter-amount').value = 'all';
-            document.getElementById('filter-industry').selectedIndex = -1;
-            document.getElementById('filter-rating').selectedIndex = -1;
-            document.getElementById('filter-company').selectedIndex = -1;
+            clearOptions('filter-industry');
+            clearOptions('filter-rating');
+            clearOptions('filter-company');
             document.getElementById('search-industry').value = '';
             document.getElementById('search-rating').value = '';
             document.getElementById('search-company').value = '';
