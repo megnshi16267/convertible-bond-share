@@ -439,6 +439,103 @@
         }
         
         .no-data { padding: 40px; text-align: center; color: #9ca3af; }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0 8px 0;
+        }
+
+        .overview-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .overview-card h3 {
+            color: #4f46e5;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+
+        .overview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+        }
+
+        .overview-table thead {
+            background: #eef2ff;
+            color: #1f2937;
+        }
+
+        .overview-table th,
+        .overview-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 12px;
+        }
+
+        .overview-link-btn {
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #4338ca;
+            border-radius: 6px;
+            font-size: 11px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+        .overview-link-btn:hover {
+            background: #e0e7ff;
+        }
+
+        .overview-modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .overview-modal.open {
+            display: flex;
+        }
+
+        .overview-modal-panel {
+            width: min(1100px, 96vw);
+            max-height: 84vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.24);
+        }
+
+        .overview-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .overview-modal-close {
+            border: 1px solid #d1d5db;
+            background: #fff;
+            border-radius: 6px;
+            font-size: 12px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
         
         @media (max-width: 768px) {
             .filter-grid { grid-template-columns: 1fr; }
@@ -448,6 +545,7 @@
             table { font-size: 10px; }
             th, td { padding: 6px 4px; }
             .nav-tab { font-size: 11px; padding: 10px 12px; }
+            .overview-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -457,7 +555,7 @@
             <h1>📊 可转债投资分析系统 v3.1</h1>
             <p>智能筛选·策略选券·强赎预警·实时数据</p>
             <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                更新时间: 2026年02月12日 16:18:11
+                更新时间: 2026年02月12日 16:27:47
             </p>
         </header>
         
@@ -511,28 +609,48 @@
             <div class="section">
                 <h2>📊 市场数据总览</h2>
                 
-                <!-- 基础统计 -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px;">
-                        <div style="font-size: 14px; opacity: 0.9;">转债总数</div>
-                        <div style="font-size: 36px; font-weight: bold; margin: 10px 0;">374</div>
-                        <div style="font-size: 12px; opacity: 0.8;">只转债</div>
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <h3>核心指标（表格总览）</h3>
+                        <table class="overview-table">
+                            <thead>
+                                <tr>
+                                    <th>指标</th>
+                                    <th>数值</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-kpi-body"></tbody>
+                        </table>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 20px; border-radius: 10px;">
-                        <div style="font-size: 14px; opacity: 0.9;">总存续余额</div>
-                        <div style="font-size: 36px; font-weight: bold; margin: 10px 0;">5242</div>
-                        <div style="font-size: 12px; opacity: 0.8;">亿元</div>
+                    <div class="overview-card">
+                        <h3>风险分布（点击查看标的）</h3>
+                        <table class="overview-table">
+                            <thead>
+                                <tr>
+                                    <th>风险等级</th>
+                                    <th>数量</th>
+                                    <th>占比</th>
+                                    <th>标的</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-risk-body"></tbody>
+                        </table>
                     </div>
-                    <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 20px; border-radius: 10px;">
-                        <div style="font-size: 14px; opacity: 0.9;">平均价格</div>
-                        <div style="font-size: 36px; font-weight: bold; margin: 10px 0;">167.30</div>
-                        <div style="font-size: 12px; opacity: 0.8;">元</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 20px; border-radius: 10px;">
-                        <div style="font-size: 14px; opacity: 0.9;">平均转股溢价率</div>
-                        <div style="font-size: 36px; font-weight: bold; margin: 10px 0;">46.8</div>
-                        <div style="font-size: 12px; opacity: 0.8;">%</div>
-                    </div>
+                </div>
+
+                <div class="overview-card" style="margin-top: 12px;">
+                    <h3>行业分布（点击查看标的）</h3>
+                    <table class="overview-table">
+                        <thead>
+                            <tr>
+                                <th>行业</th>
+                                <th>数量</th>
+                                <th>占比</th>
+                                <th>标的</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overview-industry-body"></tbody>
+                    </table>
                 </div>
                 
                 <!-- 价格分布 -->
@@ -554,6 +672,29 @@
                 <!-- 强赎风险分布 -->
                 <h3 style="margin-top: 30px; color: #667eea;">强赎风险等级分布</h3>
                 <div id="risk-chart" style="margin: 20px 0;"></div>
+
+                <div id="overview-detail-modal" class="overview-modal" onclick="closeOverviewDetailModal()">
+                    <div class="overview-modal-panel" onclick="event.stopPropagation()">
+                        <div class="overview-modal-head">
+                            <h3 id="overview-detail-title" style="margin: 0; color: #1f2937;">标的明细</h3>
+                            <button class="overview-modal-close" onclick="closeOverviewDetailModal()">关闭</button>
+                        </div>
+                        <table class="overview-table">
+                            <thead>
+                                <tr>
+                                    <th>代码</th>
+                                    <th>名称</th>
+                                    <th>价格</th>
+                                    <th>涨跌幅</th>
+                                    <th>行业</th>
+                                    <th>风险等级</th>
+                                    <th>主体评级</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-detail-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -811,11 +952,106 @@
         
         // 渲染图表
         function renderCharts() {
+            renderOverviewTables();
             renderPriceChart();
             renderPremiumChart();
             renderBalanceChart();
             renderIndustryChart();
             renderRiskChart();
+        }
+
+        function escapeHtml(v) {
+            return String(v ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderOverviewTables() {
+            const total = allBonds.length || 1;
+            const totalBalance = allBonds.reduce((s, b) => s + (b['存续余额(亿)'] || 0), 0);
+            const avgPrice = allBonds.reduce((s, b) => s + (b['最新价'] || 0), 0) / total;
+            const premiumBonds = allBonds.filter(b => (b['转股溢价率'] || 0) !== 0);
+            const avgPremium = premiumBonds.length > 0
+                ? premiumBonds.reduce((s, b) => s + (b['转股溢价率'] || 0), 0) / premiumBonds.length
+                : 0;
+            const highRiskCount = allBonds.filter(b => ['极高风险', '高风险'].includes((b['风险等级'] || '').trim())).length;
+
+            const kpiRows = [
+                ['市场总数', `${allBonds.length} 只`],
+                ['总存续余额', `${totalBalance.toFixed(0)} 亿元`],
+                ['平均价格', `${avgPrice.toFixed(2)} 元`],
+                ['平均转股溢价率', `${avgPremium.toFixed(2)} %`],
+                ['强赎高风险(极高/高)', `${highRiskCount} 只`]
+            ];
+            const kpiBody = document.getElementById('overview-kpi-body');
+            kpiBody.innerHTML = kpiRows.map(r => `<tr><td>${r[0]}</td><td><strong>${r[1]}</strong></td></tr>`).join('');
+
+            const riskMap = new Map();
+            allBonds.forEach(b => {
+                const key = (b['风险等级'] || '未标注').trim() || '未标注';
+                riskMap.set(key, (riskMap.get(key) || 0) + 1);
+            });
+            const riskData = Array.from(riskMap.entries()).sort((a, b) => b[1] - a[1]);
+            const riskBody = document.getElementById('overview-risk-body');
+            riskBody.innerHTML = riskData.map(([name, count]) => {
+                const pct = (count * 100 / total).toFixed(1);
+                return `<tr>
+                    <td>${escapeHtml(name)}</td>
+                    <td>${count}</td>
+                    <td>${pct}%</td>
+                    <td><button class="overview-link-btn" onclick="openOverviewDetail('risk', '${encodeURIComponent(name)}')">查看标的</button></td>
+                </tr>`;
+            }).join('');
+
+            const industryMap = new Map();
+            allBonds.forEach(b => {
+                const key = (b['行业分类'] || '未分类').trim() || '未分类';
+                industryMap.set(key, (industryMap.get(key) || 0) + 1);
+            });
+            const industryData = Array.from(industryMap.entries()).sort((a, b) => b[1] - a[1]);
+            const industryBody = document.getElementById('overview-industry-body');
+            industryBody.innerHTML = industryData.map(([name, count]) => {
+                const pct = (count * 100 / total).toFixed(1);
+                return `<tr>
+                    <td>${escapeHtml(name)}</td>
+                    <td>${count}</td>
+                    <td>${pct}%</td>
+                    <td><button class="overview-link-btn" onclick="openOverviewDetail('industry', '${encodeURIComponent(name)}')">查看标的</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function getOverviewMatchedBonds(mode, value) {
+            if (mode === 'industry') return allBonds.filter(b => (b['行业分类'] || '').trim() === value);
+            if (mode === 'risk') return allBonds.filter(b => ((b['风险等级'] || '未标注').trim() || '未标注') === value);
+            return [];
+        }
+
+        function openOverviewDetail(mode, encodedValue) {
+            const value = decodeURIComponent(encodedValue || '');
+            const title = mode === 'industry' ? `行业：${value}` : `风险等级：${value}`;
+            const rows = getOverviewMatchedBonds(mode, value);
+            const body = document.getElementById('overview-detail-body');
+            body.innerHTML = rows.map(b => `
+                <tr>
+                    <td>${escapeHtml(b['转债代码'] || '')}</td>
+                    <td>${escapeHtml(b['转债名称'] || '')}</td>
+                    <td>${Number(b['最新价'] || 0).toFixed(2)}</td>
+                    <td>${Number(b['涨跌幅'] || 0).toFixed(2)}%</td>
+                    <td>${escapeHtml(b['行业分类'] || '')}</td>
+                    <td>${escapeHtml(b['风险等级'] || '')}</td>
+                    <td>${escapeHtml(b['主体评级'] || b['债券评级'] || '')}</td>
+                </tr>
+            `).join('');
+            document.getElementById('overview-detail-title').textContent = `${title}（${rows.length}只）`;
+            document.getElementById('overview-detail-modal').classList.add('open');
+        }
+
+        function closeOverviewDetailModal() {
+            document.getElementById('overview-detail-modal').classList.remove('open');
         }
         
         // 价格分布图
@@ -1084,7 +1320,10 @@
                 }
             });
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') closeAllFilterPanels();
+                if (e.key === 'Escape') {
+                    closeAllFilterPanels();
+                    closeOverviewDetailModal();
+                }
             });
             document.querySelectorAll('.th-filter-panel').forEach(panel => {
                 panel.addEventListener('click', function(e) { e.stopPropagation(); });
