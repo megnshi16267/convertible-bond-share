@@ -283,6 +283,22 @@
             position: relative;
             width: 100%;
         }
+
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .sortable-th:hover {
+            background: #1e40af !important;
+        }
+
+        .sort-indicator {
+            margin-left: 4px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
         
         .filter-item select:hover { border-color: #667eea; }
         .filter-item select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
@@ -440,7 +456,7 @@
             <h1>📊 可转债投资分析系统 v3.1</h1>
             <p>智能筛选·策略选券·强赎预警·实时数据</p>
             <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                更新时间: 2026年02月12日 15:40:40
+                更新时间: 2026年02月12日 16:03:41
             </p>
         </header>
         
@@ -579,8 +595,8 @@
                 </div>
                 
                 <div class="filter-actions">
-                    <button class="btn btn-primary" onclick="applyFilters()">🔍 应用筛选</button>
-                    <button class="btn btn-secondary" onclick="resetFilters()">🔄 重置筛选</button>
+                    <button class="btn btn-primary" onclick="closeAllFilterPanels();applyFilters()">🔍 应用筛选</button>
+                    <button class="btn btn-secondary" onclick="closeAllFilterPanels();resetFilters()">🔄 重置筛选</button>
                     <button class="btn btn-secondary" onclick="quickFilter('safe')">🛡️ 最安全</button>
                     <button class="btn btn-secondary" onclick="quickFilter('value')">💎 价值投资</button>
                     <button class="btn btn-secondary" onclick="quickFilter('lowPrice')">💰 低价</button>
@@ -611,20 +627,20 @@
                 <table id="bond-table">
                     <thead>
                         <tr>
-                            <th>代码</th>
-                            <th>名称</th>
-                            <th>价格</th>
-                            <th>涨跌幅</th>
-                            <th>转股溢价率</th>
-                            <th>余额(亿)</th>
-                            <th>正股</th>
-                            <th>行业</th>
-                            <th>企业性质</th>
-                            <th>主体评级</th>
-                            <th>债项评级</th>
-                            <th>强赎状态</th>
-                            <th>风险等级</th>
-                            <th>成交(万)</th>
+                            <th class="sortable-th" onclick="toggleTableSort('code')">代码 <span class="sort-indicator" data-sort-key="code">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('name')">名称 <span class="sort-indicator" data-sort-key="name">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('price')">价格 <span class="sort-indicator" data-sort-key="price">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('change')">涨跌幅 <span class="sort-indicator" data-sort-key="change">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('premium')">转股溢价率 <span class="sort-indicator" data-sort-key="premium">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('balance')">余额(亿) <span class="sort-indicator" data-sort-key="balance">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('stock')">正股 <span class="sort-indicator" data-sort-key="stock">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('industry')">行业 <span class="sort-indicator" data-sort-key="industry">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('company')">企业性质 <span class="sort-indicator" data-sort-key="company">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('rating')">主体评级 <span class="sort-indicator" data-sort-key="rating">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('debtRating')">债项评级 <span class="sort-indicator" data-sort-key="debtRating">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('redeem')">强赎状态 <span class="sort-indicator" data-sort-key="redeem">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('risk')">风险等级 <span class="sort-indicator" data-sort-key="risk">↕</span></th>
+                            <th class="sortable-th" onclick="toggleTableSort('amount')">成交(万) <span class="sort-indicator" data-sort-key="amount">↕</span></th>
                         </tr>
                         <tr class="header-filter-row">
                             <th></th>
@@ -771,18 +787,25 @@
         const allRiskLevels = [...new Set(allBonds.map(b => (b['风险等级'] || '').trim()).filter(x => x))].sort();
         const headerFilterState = { industry: new Set(), company: new Set(), rating: new Set(), debtRating: new Set(), redeem: new Set(), risk: new Set() };
         const inlineFilterState = { price: new Set(), premium: new Set(), balance: new Set(), redeem: new Set(), change: new Set(), amount: new Set() };
+        const tableSortState = { key: 'code', order: 'asc' };
         let filteredBonds = [...allBonds];
         
         // 初始化
         window.onload = function() {
             initFilters();
             initHeaderFilters();
+            initGlobalInteractions();
             renderTable(allBonds);
             updateStats();
             renderCharts();
             
             // 绑定排序事件
-            document.getElementById('sort-by').addEventListener('change', applySorting);
+            document.getElementById('sort-by').addEventListener('change', function() {
+                setSortBySelect(this.value);
+                applySorting();
+            });
+            setSortBySelect(document.getElementById('sort-by').value);
+            updateSortIndicators();
         };
         
         // 渲染图表
@@ -1041,11 +1064,30 @@
         }
 
         function toggleHeaderFilter(containerId) {
+            if (window.event) window.event.stopPropagation();
             const panel = document.getElementById(`${containerId}-panel`);
-            document.querySelectorAll('.th-filter-panel').forEach(p => {
-                if (p !== panel) p.classList.remove('open');
-            });
+            closeAllFilterPanels(panel);
             panel.classList.toggle('open');
+        }
+
+        function closeAllFilterPanels(exceptPanel=null) {
+            document.querySelectorAll('.th-filter-panel').forEach(p => {
+                if (p !== exceptPanel) p.classList.remove('open');
+            });
+        }
+
+        function initGlobalInteractions() {
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.th-filter') && !e.target.closest('.inline-dd')) {
+                    closeAllFilterPanels();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeAllFilterPanels();
+            });
+            document.querySelectorAll('.th-filter-panel').forEach(panel => {
+                panel.addEventListener('click', function(e) { e.stopPropagation(); });
+            });
         }
 
         function filterHeaderList(containerId, keyword) {
@@ -1176,6 +1218,7 @@
                 case 'active': // 活跃
                     inlineFilterState.amount.add('100000000-9999999999');
                     document.getElementById('sort-by').value = 'amount-desc';
+                    setSortBySelect('amount-desc');
                     break;
             }
             updateHeaderFilterBtnText('filter-price-dd', '全部价格', inlineFilterState.price.size);
@@ -1328,41 +1371,80 @@
             updateHeaderFilterBtnText('th-filter-redeem', '强赎状态', 0);
             updateHeaderFilterBtnText('th-filter-risk', '风险等级', 0);
             document.getElementById('sort-by').value = 'code';
+            setSortBySelect('code');
             filteredBonds = [...allBonds];
-            renderTable(filteredBonds);
+            applySorting();
             updateStats();
         }
         
         // 排序
-        function applySorting() {
-            const sortBy = document.getElementById('sort-by').value;
-            
-            switch(sortBy) {
-                case 'price':
-                    filteredBonds.sort((a, b) => (a['最新价'] || 0) - (b['最新价'] || 0));
-                    break;
-                case 'price-desc':
-                    filteredBonds.sort((a, b) => (b['最新价'] || 0) - (a['最新价'] || 0));
-                    break;
-                case 'premium':
-                    filteredBonds.sort((a, b) => (a['转股溢价率'] || 999) - (b['转股溢价率'] || 999));
-                    break;
-                case 'premium-desc':
-                    filteredBonds.sort((a, b) => (b['转股溢价率'] || 0) - (a['转股溢价率'] || 0));
-                    break;
-                case 'balance-desc':
-                    filteredBonds.sort((a, b) => (b['存续余额(亿)'] || 0) - (a['存续余额(亿)'] || 0));
-                    break;
-                case 'amount-desc':
-                    filteredBonds.sort((a, b) => (b['成交额'] || 0) - (a['成交额'] || 0));
-                    break;
-                case 'change-desc':
-                    filteredBonds.sort((a, b) => (b['涨跌幅'] || 0) - (a['涨跌幅'] || 0));
-                    break;
-                default:
-                    filteredBonds.sort((a, b) => (a['转债代码'] || '').localeCompare(b['转债代码'] || ''));
+        function setSortBySelect(sortBy) {
+            const mapping = {
+                'code': {key:'code', order:'asc'},
+                'price': {key:'price', order:'asc'},
+                'price-desc': {key:'price', order:'desc'},
+                'premium': {key:'premium', order:'asc'},
+                'premium-desc': {key:'premium', order:'desc'},
+                'balance-desc': {key:'balance', order:'desc'},
+                'amount-desc': {key:'amount', order:'desc'},
+                'change-desc': {key:'change', order:'desc'}
+            };
+            const target = mapping[sortBy] || mapping['code'];
+            tableSortState.key = target.key;
+            tableSortState.order = target.order;
+            updateSortIndicators();
+        }
+
+        function toggleTableSort(sortKey) {
+            if (tableSortState.key === sortKey) {
+                tableSortState.order = tableSortState.order === 'asc' ? 'desc' : 'asc';
+            } else {
+                tableSortState.key = sortKey;
+                tableSortState.order = 'asc';
             }
-            
+            updateSortIndicators();
+            applySorting();
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('.sort-indicator').forEach(el => {
+                const key = el.getAttribute('data-sort-key');
+                if (key === tableSortState.key) {
+                    el.textContent = tableSortState.order === 'asc' ? '↑' : '↓';
+                } else {
+                    el.textContent = '↕';
+                }
+            });
+        }
+
+        function getBondSortValue(bond, key) {
+            switch(key) {
+                case 'code': return bond['转债代码'] || '';
+                case 'name': return bond['转债名称'] || '';
+                case 'price': return bond['最新价'] || 0;
+                case 'change': return bond['涨跌幅'] || 0;
+                case 'premium': return bond['转股溢价率'] || 0;
+                case 'balance': return bond['存续余额(亿)'] || 0;
+                case 'stock': return bond['正股名称'] || '';
+                case 'industry': return bond['行业分类'] || '';
+                case 'company': return bond['企业性质'] || '';
+                case 'rating': return bond['主体评级'] || bond['债券评级'] || '';
+                case 'debtRating': return bond['债项评级'] || bond['债券评级'] || '';
+                case 'redeem': return bond['强赎状态'] || '';
+                case 'risk': return bond['风险等级'] || '';
+                case 'amount': return bond['成交额'] || 0;
+                default: return bond['转债代码'] || '';
+            }
+        }
+
+        function applySorting() {
+            const factor = tableSortState.order === 'asc' ? 1 : -1;
+            filteredBonds.sort((a, b) => {
+                const va = getBondSortValue(a, tableSortState.key);
+                const vb = getBondSortValue(b, tableSortState.key);
+                if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor;
+                return String(va).localeCompare(String(vb), 'zh-CN') * factor;
+            });
             renderTable(filteredBonds);
         }
         
