@@ -278,6 +278,11 @@
             padding: 4px 2px;
             font-size: 12px;
         }
+
+        .inline-dd {
+            position: relative;
+            width: 100%;
+        }
         
         .filter-item select:hover { border-color: #667eea; }
         .filter-item select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
@@ -435,7 +440,7 @@
             <h1>📊 可转债投资分析系统 v3.1</h1>
             <p>智能筛选·策略选券·强赎预警·实时数据</p>
             <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                更新时间: 2026年02月12日 15:19:52
+                更新时间: 2026年02月12日 15:40:40
             </p>
         </header>
         
@@ -542,78 +547,32 @@
                 <div class="filter-grid">
                     <div class="filter-item">
                         <label>价格区间</label>
-                        <select id="filter-price">
-                            <option value="all">全部价格</option>
-                            <option value="0-100">< 100元</option>
-                            <option value="100-110">100-110元</option>
-                            <option value="110-120">110-120元</option>
-                            <option value="120-130">120-130元</option>
-                            <option value="130-150">130-150元</option>
-                            <option value="150-999">> 150元</option>
-                        </select>
+                        <div id="filter-price-dd" class="inline-dd"></div>
                     </div>
                     
                     <div class="filter-item">
                         <label>转股溢价率</label>
-                        <select id="filter-premium">
-                            <option value="all">全部转股溢价率</option>
-                            <option value="-999-0">折价(< 0%)</option>
-                            <option value="0-10">0-10%</option>
-                            <option value="10-20">10-20%</option>
-                            <option value="20-30">20-30%</option>
-                            <option value="30-50">30-50%</option>
-                            <option value="50-999">> 50%</option>
-                        </select>
+                        <div id="filter-premium-dd" class="inline-dd"></div>
                     </div>
                     
                     <div class="filter-item">
                         <label>存续余额</label>
-                        <select id="filter-balance">
-                            <option value="all">全部规模</option>
-                            <option value="0-1">< 1亿</option>
-                            <option value="1-5">1-5亿</option>
-                            <option value="5-10">5-10亿</option>
-                            <option value="10-20">10-20亿</option>
-                            <option value="20-9999">> 20亿</option>
-                        </select>
+                        <div id="filter-balance-dd" class="inline-dd"></div>
                     </div>
                     
                     <div class="filter-item">
                         <label>强赎状态</label>
-                        <select id="filter-redeem">
-                            <option value="all">全部状态</option>
-                            <option value="极高风险">极高风险</option>
-                            <option value="高风险">高风险</option>
-                            <option value="中高风险">中高风险</option>
-                            <option value="中等风险">中等风险</option>
-                            <option value="低风险">低风险</option>
-                            <option value="公告不强赎">公告不强赎</option>
-                        </select>
+                        <div id="filter-redeem-dd" class="inline-dd"></div>
                     </div>
                     
                     <div class="filter-item">
                         <label>涨跌幅</label>
-                        <select id="filter-change">
-                            <option value="all">全部涨跌</option>
-                            <option value="5-999">涨幅>5%</option>
-                            <option value="2-5">涨2-5%</option>
-                            <option value="0-2">涨0-2%</option>
-                            <option value="-2-0">跌0-2%</option>
-                            <option value="-5--2">跌2-5%</option>
-                            <option value="-999--5">跌幅>5%</option>
-                        </select>
+                        <div id="filter-change-dd" class="inline-dd"></div>
                     </div>
                     
                     <div class="filter-item">
                         <label>成交额</label>
-                        <select id="filter-amount">
-                            <option value="all">全部成交</option>
-                            <option value="100000000-9999999999">>1亿</option>
-                            <option value="50000000-100000000">5000万-1亿</option>
-                            <option value="10000000-50000000">1000万-5000万</option>
-                            <option value="1000000-10000000">100万-1000万</option>
-                            <option value="0-1000000"><100万</option>
-                        </select>
+                        <div id="filter-amount-dd" class="inline-dd"></div>
                     </div>
                     
                     <!-- 行业/评级/企业性质已迁移到表头下拉复选筛选 -->
@@ -811,6 +770,7 @@
         const allRedeemStates = [...new Set(allBonds.map(b => (b['强赎状态'] || '').trim()).filter(x => x))].sort();
         const allRiskLevels = [...new Set(allBonds.map(b => (b['风险等级'] || '').trim()).filter(x => x))].sort();
         const headerFilterState = { industry: new Set(), company: new Set(), rating: new Set(), debtRating: new Set(), redeem: new Set(), risk: new Set() };
+        const inlineFilterState = { price: new Set(), premium: new Set(), balance: new Set(), redeem: new Set(), change: new Set(), amount: new Set() };
         let filteredBonds = [...allBonds];
         
         // 初始化
@@ -1000,7 +960,35 @@
         
         // 初始化筛选器选项
         function initFilters() {
-            // 表头筛选启用后，顶部仅保留区间类筛选
+            initInlineMultiFilters();
+        }
+
+        function initInlineMultiFilters() {
+            buildHeaderDropdown('filter-price-dd', '全部价格', [
+                {label:'< 100元', value:'0-100'}, {label:'100-110元', value:'100-110'}, {label:'110-120元', value:'110-120'},
+                {label:'120-130元', value:'120-130'}, {label:'130-150元', value:'130-150'}, {label:'> 150元', value:'150-999'}
+            ], 'price', true);
+            buildHeaderDropdown('filter-premium-dd', '全部转股溢价率', [
+                {label:'折价(< 0%)', value:'-999-0'}, {label:'0-10%', value:'0-10'}, {label:'10-20%', value:'10-20'},
+                {label:'20-30%', value:'20-30'}, {label:'30-50%', value:'30-50'}, {label:'> 50%', value:'50-999'}
+            ], 'premium', true);
+            buildHeaderDropdown('filter-balance-dd', '全部规模', [
+                {label:'< 1亿', value:'0-1'}, {label:'1-5亿', value:'1-5'}, {label:'5-10亿', value:'5-10'},
+                {label:'10-20亿', value:'10-20'}, {label:'> 20亿', value:'20-9999'}
+            ], 'balance', true);
+            buildHeaderDropdown('filter-redeem-dd', '全部状态', [
+                {label:'极高风险', value:'极高风险'}, {label:'高风险', value:'高风险'}, {label:'中高风险', value:'中高风险'},
+                {label:'中等风险', value:'中等风险'}, {label:'低风险', value:'低风险'}, {label:'公告不强赎', value:'公告不强赎'}
+            ], 'redeem', true);
+            buildHeaderDropdown('filter-change-dd', '全部涨跌', [
+                {label:'涨幅>5%', value:'5-999'}, {label:'涨2-5%', value:'2-5'}, {label:'涨0-2%', value:'0-2'},
+                {label:'跌0-2%', value:'-2-0'}, {label:'跌2-5%', value:'-5--2'}, {label:'跌幅>5%', value:'-999--5'}
+            ], 'change', true);
+            buildHeaderDropdown('filter-amount-dd', '全部成交', [
+                {label:'>1亿', value:'100000000-9999999999'}, {label:'5000万-1亿', value:'50000000-100000000'},
+                {label:'1000万-5000万', value:'10000000-50000000'}, {label:'100万-1000万', value:'1000000-10000000'},
+                {label:'<100万', value:'0-1000000'}
+            ], 'amount', true);
         }
 
         function initHeaderFilters() {
@@ -1012,8 +1000,9 @@
             buildHeaderDropdown('th-filter-risk', '风险等级', allRiskLevels, 'risk');
         }
 
-        function buildHeaderDropdown(containerId, title, options, stateKey) {
+        function buildHeaderDropdown(containerId, title, options, stateKey, isInline=false) {
             const container = document.getElementById(containerId);
+            const optionList = (options || []).map(o => (typeof o === 'string' ? {label:o, value:o} : o));
             container.innerHTML = `
                 <button type="button" class="th-filter-btn" onclick="toggleHeaderFilter('${containerId}')">${title} ▾</button>
                 <div class="th-filter-panel" id="${containerId}-panel">
@@ -1027,18 +1016,28 @@
             `;
 
             const listEl = document.getElementById(`${containerId}-list`);
-            options.forEach(opt => {
+            optionList.forEach(opt => {
                 const item = document.createElement('label');
                 item.className = 'th-filter-item';
-                item.setAttribute('data-value', (opt || '').toLowerCase());
-                item.innerHTML = `<input type="checkbox" value="${opt}"><span>${opt}</span>`;
+                item.setAttribute('data-value', (opt.label || '').toLowerCase());
+                item.innerHTML = `<input type="checkbox" value="${opt.value}"><span>${opt.label}</span>`;
                 item.querySelector('input').addEventListener('change', (e) => {
-                    if (e.target.checked) headerFilterState[stateKey].add(opt);
-                    else headerFilterState[stateKey].delete(opt);
+                    const targetState = isInline ? inlineFilterState : headerFilterState;
+                    const v = e.target.value;
+                    if (e.target.checked) targetState[stateKey].add(v);
+                    else targetState[stateKey].delete(v);
+                    updateHeaderFilterBtnText(containerId, title, targetState[stateKey].size);
                     applyFilters();
                 });
                 listEl.appendChild(item);
             });
+            updateHeaderFilterBtnText(containerId, title, 0);
+        }
+
+        function updateHeaderFilterBtnText(containerId, title, selectedCount) {
+            const btn = document.querySelector(`#${containerId} .th-filter-btn`);
+            if (!btn) return;
+            btn.textContent = selectedCount > 0 ? `${title}(${selectedCount}) ▾` : `${title} ▾`;
         }
 
         function toggleHeaderFilter(containerId) {
@@ -1060,14 +1059,24 @@
         function setHeaderAll(containerId, stateKey, checked) {
             const list = document.getElementById(`${containerId}-list`);
             const boxes = list.querySelectorAll('input[type="checkbox"]');
-            if (!checked) headerFilterState[stateKey].clear();
+            const targetState = containerId.startsWith('filter-') ? inlineFilterState : headerFilterState;
+            if (!checked) targetState[stateKey].clear();
             boxes.forEach(cb => {
                 if (cb.closest('.th-filter-item').style.display !== 'none') {
                     cb.checked = checked;
-                    if (checked) headerFilterState[stateKey].add(cb.value);
+                    if (checked) targetState[stateKey].add(cb.value);
                 }
             });
+            const btn = document.querySelector(`#${containerId} .th-filter-btn`);
+            const baseTitle = btn ? btn.textContent.split('(')[0].replace(' ▾','') : '';
+            updateHeaderFilterBtnText(containerId, baseTitle, targetState[stateKey].size);
             applyFilters();
+        }
+
+        function parseRangeExpr(expr) {
+            const m = String(expr || '').match(/^(-?\d+(?:\.\d+)?)\-(-?\d+(?:\.\d+)?)$/);
+            if (!m) return null;
+            return {min: Number(m[1]), max: Number(m[2])};
         }
 
         function renderMultiChecklist(containerId, values, searchId, hintId) {
@@ -1151,24 +1160,30 @@
             
             switch(type) {
                 case 'safe': // 最安全
-                    document.getElementById('filter-price').value = '100-120';
-                    document.getElementById('filter-redeem').value = '低风险';
-                    document.getElementById('filter-balance').value = '10-20';
+                    inlineFilterState.price.add('100-120');
+                    inlineFilterState.redeem.add('低风险');
+                    inlineFilterState.balance.add('10-20');
                     break;
                 case 'value': // 价值投资
-                    document.getElementById('filter-price').value = '110-130';
-                    document.getElementById('filter-premium').value = '0-20';
-                    document.getElementById('filter-balance').value = '5-10';
+                    inlineFilterState.price.add('110-130');
+                    inlineFilterState.premium.add('0-20');
+                    inlineFilterState.balance.add('5-10');
                     break;
                 case 'lowPrice': // 低价
-                    document.getElementById('filter-price').value = '100-115';
-                    document.getElementById('filter-redeem').value = '低风险';
+                    inlineFilterState.price.add('100-120');
+                    inlineFilterState.redeem.add('低风险');
                     break;
                 case 'active': // 活跃
-                    document.getElementById('filter-amount').value = '100000000-9999999999';
+                    inlineFilterState.amount.add('100000000-9999999999');
                     document.getElementById('sort-by').value = 'amount-desc';
                     break;
             }
+            updateHeaderFilterBtnText('filter-price-dd', '全部价格', inlineFilterState.price.size);
+            updateHeaderFilterBtnText('filter-premium-dd', '全部转股溢价率', inlineFilterState.premium.size);
+            updateHeaderFilterBtnText('filter-balance-dd', '全部规模', inlineFilterState.balance.size);
+            updateHeaderFilterBtnText('filter-redeem-dd', '全部状态', inlineFilterState.redeem.size);
+            updateHeaderFilterBtnText('filter-change-dd', '全部涨跌', inlineFilterState.change.size);
+            updateHeaderFilterBtnText('filter-amount-dd', '全部成交', inlineFilterState.amount.size);
             
             applyFilters();
         }
@@ -1178,59 +1193,71 @@
             let filtered = [...allBonds];
             
             // 价格
-            const priceFilter = document.getElementById('filter-price').value;
-            if (priceFilter !== 'all') {
-                const [min, max] = priceFilter.split('-').map(Number);
-                filtered = filtered.filter(b => b['最新价'] >= min && b['最新价'] < max);
+            const priceFilters = Array.from(inlineFilterState.price);
+            if (priceFilters.length > 0) {
+                filtered = filtered.filter(b => {
+                    const v = b['最新价'] || 0;
+                    return priceFilters.some(f => {
+                        const r = parseRangeExpr(f);
+                        return r ? (v >= r.min && v < r.max) : false;
+                    });
+                });
             }
             
             // 溢价率
-            const premiumFilter = document.getElementById('filter-premium').value;
-            if (premiumFilter !== 'all') {
-                const [min, max] = premiumFilter.split('-').map(Number);
+            const premiumFilters = Array.from(inlineFilterState.premium);
+            if (premiumFilters.length > 0) {
                 filtered = filtered.filter(b => {
-                    const premium = b['转股溢价率'];
-                    return premium >= min && premium < max;
+                    const v = b['转股溢价率'] || 0;
+                    return premiumFilters.some(f => {
+                        const r = parseRangeExpr(f);
+                        return r ? (v >= r.min && v < r.max) : false;
+                    });
                 });
             }
             
             // 存续余额
-            const balanceFilter = document.getElementById('filter-balance').value;
-            if (balanceFilter !== 'all') {
-                const [min, max] = balanceFilter.split('-').map(Number);
+            const balanceFilters = Array.from(inlineFilterState.balance);
+            if (balanceFilters.length > 0) {
                 filtered = filtered.filter(b => {
-                    const balance = b['存续余额(亿)'] || 0;
-                    return balance >= min && balance < max;
+                    const v = b['存续余额(亿)'] || 0;
+                    return balanceFilters.some(f => {
+                        const r = parseRangeExpr(f);
+                        return r ? (v >= r.min && v < r.max) : false;
+                    });
                 });
             }
             
             // 强赎状态
-            const redeemFilter = document.getElementById('filter-redeem').value;
-            if (redeemFilter !== 'all') {
-                if (redeemFilter === '公告不强赎') {
-                    filtered = filtered.filter(b => b['强赎状态'] && b['强赎状态'].includes('公告不强赎'));
-                } else {
-                    filtered = filtered.filter(b => b['风险等级'] === redeemFilter);
-                }
+            const redeemFilters = Array.from(inlineFilterState.redeem);
+            if (redeemFilters.length > 0) {
+                filtered = filtered.filter(b => redeemFilters.some(f => {
+                    if (f === '公告不强赎') return (b['强赎状态'] || '').includes('公告不强赎');
+                    return (b['风险等级'] || '') === f;
+                }));
             }
             
             // 涨跌幅
-            const changeFilter = document.getElementById('filter-change').value;
-            if (changeFilter !== 'all') {
-                const [min, max] = changeFilter.split('-').map(Number);
+            const changeFilters = Array.from(inlineFilterState.change);
+            if (changeFilters.length > 0) {
                 filtered = filtered.filter(b => {
-                    const change = b['涨跌幅'] || 0;
-                    return change >= min && change < max;
+                    const v = b['涨跌幅'] || 0;
+                    return changeFilters.some(f => {
+                        const r = parseRangeExpr(f);
+                        return r ? (v >= r.min && v < r.max) : false;
+                    });
                 });
             }
             
             // 成交额
-            const amountFilter = document.getElementById('filter-amount').value;
-            if (amountFilter !== 'all') {
-                const [min, max] = amountFilter.split('-').map(Number);
+            const amountFilters = Array.from(inlineFilterState.amount);
+            if (amountFilters.length > 0) {
                 filtered = filtered.filter(b => {
-                    const amount = b['成交额'] || 0;
-                    return amount >= min && amount < max;
+                    const v = b['成交额'] || 0;
+                    return amountFilters.some(f => {
+                        const r = parseRangeExpr(f);
+                        return r ? (v >= r.min && v < r.max) : false;
+                    });
                 });
             }
             
@@ -1283,16 +1310,23 @@
         
         // 重置筛选
         function resetFilters() {
-            document.getElementById('filter-price').value = 'all';
-            document.getElementById('filter-premium').value = 'all';
-            document.getElementById('filter-balance').value = 'all';
-            document.getElementById('filter-redeem').value = 'all';
-            document.getElementById('filter-change').value = 'all';
-            document.getElementById('filter-amount').value = 'all';
+            Object.keys(inlineFilterState).forEach(k => inlineFilterState[k].clear());
             Object.keys(headerFilterState).forEach(k => headerFilterState[k].clear());
             document.querySelectorAll('.th-filter-panel input[type="checkbox"]').forEach(cb => cb.checked = false);
             document.querySelectorAll('.th-filter-search').forEach(i => i.value = '');
             document.querySelectorAll('.th-filter-item').forEach(item => item.style.display = 'flex');
+            updateHeaderFilterBtnText('filter-price-dd', '全部价格', 0);
+            updateHeaderFilterBtnText('filter-premium-dd', '全部转股溢价率', 0);
+            updateHeaderFilterBtnText('filter-balance-dd', '全部规模', 0);
+            updateHeaderFilterBtnText('filter-redeem-dd', '全部状态', 0);
+            updateHeaderFilterBtnText('filter-change-dd', '全部涨跌', 0);
+            updateHeaderFilterBtnText('filter-amount-dd', '全部成交', 0);
+            updateHeaderFilterBtnText('th-filter-industry', '行业', 0);
+            updateHeaderFilterBtnText('th-filter-company', '企业性质', 0);
+            updateHeaderFilterBtnText('th-filter-rating', '主体评级', 0);
+            updateHeaderFilterBtnText('th-filter-debt-rating', '债项评级', 0);
+            updateHeaderFilterBtnText('th-filter-redeem', '强赎状态', 0);
+            updateHeaderFilterBtnText('th-filter-risk', '风险等级', 0);
             document.getElementById('sort-by').value = 'code';
             filteredBonds = [...allBonds];
             renderTable(filteredBonds);
