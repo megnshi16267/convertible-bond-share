@@ -555,7 +555,7 @@
             <h1>📊 可转债投资分析系统 v3.1</h1>
             <p>智能筛选·策略选券·条款监测·实时数据</p>
             <p style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                更新时间: 2026年02月13日 11:33:46
+                更新时间: 2026年02月13日 11:45:54
             </p>
         </header>
         
@@ -593,20 +593,20 @@
         </div>
         
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('filter')">🔍 智能筛选</button>
-            <button class="nav-tab" onclick="showTab('overview')">📊 数据总览</button>
-            <button class="nav-tab" onclick="showTab('redeem')">🚨 强赎预警</button>
-            <button class="nav-tab" onclick="showTab('clauses')">📜 条款监测</button>
-            <button class="nav-tab" onclick="showTab('value')">💎 价值投资</button>
-            <button class="nav-tab" onclick="showTab('stable')">🛡️ 稳健组合</button>
-            <button class="nav-tab" onclick="showTab('large')">🏆 大规模</button>
-            <button class="nav-tab" onclick="showTab('low-price')">💰 低价</button>
-            <button class="nav-tab" onclick="showTab('low-premium')">📈 低溢价</button>
-            <button class="nav-tab" onclick="showTab('active')">🔥 活跃</button>
-            <button class="nav-tab" onclick="showTab('quality')">🧱 高评级防守</button>
-            <button class="nav-tab" onclick="showTab('dual-low')">⚖️ 双低增强</button>
-            <button class="nav-tab" onclick="showTab('anti-redeem')">🛑 低强赎风险</button>
-            <button class="nav-tab" onclick="showTab('backtest')">🧪 策略回测</button>
+            <button class="nav-tab active" onclick="showTab('filter', this)">🔍 智能筛选</button>
+            <button class="nav-tab" onclick="showTab('overview', this)">📊 数据总览</button>
+            <button class="nav-tab" onclick="showTab('redeem', this)">🚨 强赎预警</button>
+            <button class="nav-tab" onclick="showTab('clauses', this)">📜 条款监测</button>
+            <button class="nav-tab" onclick="showTab('value', this)">💎 价值投资</button>
+            <button class="nav-tab" onclick="showTab('stable', this)">🛡️ 稳健组合</button>
+            <button class="nav-tab" onclick="showTab('large', this)">🏆 大规模</button>
+            <button class="nav-tab" onclick="showTab('low-price', this)">💰 低价</button>
+            <button class="nav-tab" onclick="showTab('low-premium', this)">📈 低溢价</button>
+            <button class="nav-tab" onclick="showTab('active', this)">🔥 活跃</button>
+            <button class="nav-tab" onclick="showTab('quality', this)">🧱 高评级防守</button>
+            <button class="nav-tab" onclick="showTab('dual-low', this)">⚖️ 双低增强</button>
+            <button class="nav-tab" onclick="showTab('anti-redeem', this)">🛑 低强赎风险</button>
+            <button class="nav-tab" onclick="showTab('backtest', this)">🧪 策略回测</button>
         </div>
         
         <!-- 数据总览标签页 -->
@@ -1168,7 +1168,7 @@
         }
 
         function escapeHtml(v) {
-            return String(v ?? '')
+            return String(v == null ? '' : v)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -2265,7 +2265,7 @@
         function downloadCsv(filename, rows) {
             if (!rows || rows.length === 0) return;
             const esc = (v) => {
-                const s = String(v ?? '');
+                const s = String(v == null ? '' : v);
                 if (s.includes(',') || s.includes('"') || s.includes('
 ')) return `"${s.replace(/"/g, '""')}"`;
                 return s;
@@ -2284,7 +2284,8 @@
         }
 
         function exportBacktestMonthlyCsv() {
-            const allFlag = !!document.getElementById('bt-export-all-months')?.checked;
+            const exportSwitch = document.getElementById('bt-export-all-months');
+            const allFlag = !!(exportSwitch && exportSwitch.checked);
             const rows = allFlag ? (backtestViewState.monthlyRows || []) : (backtestViewState.monthlyRowsShown || []);
             if (rows.length === 0) return;
             const header = ['日期', '策略净值', '基准净值(中证转债)', '超额净值', '调仓逻辑', '策略'];
@@ -2294,7 +2295,8 @@
         }
 
         function exportBacktestRebalanceCsv() {
-            const allFlag = !!document.getElementById('bt-export-all-months')?.checked;
+            const exportSwitch = document.getElementById('bt-export-all-months');
+            const allFlag = !!(exportSwitch && exportSwitch.checked);
             const rows = allFlag ? (backtestViewState.rebalanceRows || []) : (backtestViewState.rebalanceRowsShown || []);
             if (rows.length === 0) return;
             const header = ['调仓日', '持仓数', '换手率', '成本扣减', '调仓逻辑', '策略'];
@@ -2499,10 +2501,12 @@
             `).join('');
 
             // 月度回测数据
-            const focusDates = curves.find(c => c.key === focusKey)?.dates || [];
-            const focusNav = curves.find(c => c.key === focusKey)?.nav || [];
-            const benchDates = curves.find(c => c.key === 'benchmark')?.dates || [];
-            const benchNav = curves.find(c => c.key === 'benchmark')?.nav || [];
+            const focusCurve = curves.find(c => c.key === focusKey) || {};
+            const benchCurve = curves.find(c => c.key === 'benchmark') || {};
+            const focusDates = focusCurve.dates || [];
+            const focusNav = focusCurve.nav || [];
+            const benchDates = benchCurve.dates || [];
+            const benchNav = benchCurve.nav || [];
             const benchMap = new Map();
             benchDates.forEach((d, i) => benchMap.set(d, Number(benchNav[i])));
             const monthlyRows = [];
@@ -2559,12 +2563,16 @@
         }
         
         // 切换标签
-        function showTab(tabName) {
+        function showTab(tabName, el) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             
             document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            if (el && el.classList) {
+                el.classList.add('active');
+            } else if (window.event && window.event.target && window.event.target.classList) {
+                window.event.target.classList.add('active');
+            }
         }
     </script>
 </body>
